@@ -1,5 +1,9 @@
 const express = require('express');
+const path = require('path');
 const app = express();
+app.use(express.json());
+var cors = require('cors');
+app.use(cors());
 
 const { MongoClient } = require('mongodb');
 
@@ -13,6 +17,12 @@ new MongoClient(url).connect().then((client)=>{
   });
 }).catch((err)=>{
   console.log(err);
+});
+
+app.use(express.static(path.join(__dirname, '../treefy-fe/dist/index.html')));
+
+app.get('/', function (req, res) {
+  res.sendFile(path.join(__dirname, '../treefy-fe/dist/index.html'));
 });
 
 app.get('/', (req, res) => {
