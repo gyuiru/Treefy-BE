@@ -7,6 +7,7 @@ import mysql from 'mysql2';
 const app = express();
 app.use(express.json());
 app.use(cors());
+app.use(express.static(path.join(__dirname, '../../treefy-fe/dist'))); // Express 서버가 정적 파일들을 제공하도록 설정하는 코드
 dotenv.config();
 
 const connection = mysql.createConnection({
@@ -28,5 +29,5 @@ connection.connect((err) => {
 });
 
 app.get('/', (_req: Request, res: Response) => {
-  res.sendFile(path.join(__dirname, '../treefy-fe/dist/index.html'));
+  res.sendFile(path.join(__dirname, '../../treefy-fe/dist/index.html'));
 });
