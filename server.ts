@@ -123,3 +123,20 @@ app.put('/edit/:id', (req: Request, res: Response) => {
     res.status(500).send('Internal Server Error');
   }
 });
+
+app.delete('/delete/:id', (req: Request, res: Response) => {
+  try {
+    connection.query('DELETE FROM posts WHERE id = ?', [req.params.id], (error, results, _fields) => {
+      if (error) {
+        console.error('Error executing query: ' + error.stack);
+        res.status(500).send('Internal Server Error');
+        return;
+      }
+      console.log('삭제한 글 데이터 : ', results);
+      res.send(results);
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).send('Internal Server Error');
+  }
+});
