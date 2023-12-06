@@ -49,7 +49,7 @@ app.post('/posts', (req: Request, res: Response) => {
       res.status(201).send(req.body);
     })
   } catch (error) {
-    console.error(error);
+    console.log(error);
     res.status(500).send('Internal Server Error');
   }
 });
@@ -66,14 +66,15 @@ app.get('/list', (_req: Request, res: Response) => {
       res.send(results);
     })
   } catch (error) {
-    console.error(error);
+    console.log(error);
+    res.status(500).send('Internal Server Error');
   }
 });
 
 app.get('/list/detail/:id', (req: Request, res: Response) => {
   console.log(req.params.id);
   try {
-    connection.query("SELECT * FROM posts WHERE id = ?", [req.params.id], (error, results, _fields) => {
+    connection.query('SELECT * FROM posts WHERE id = ?', [req.params.id], (error, results, _fields) => {
       if (error) {
         console.error('Error executing query: ' + error.stack);
         res.status(500).send('Internal Server Error');
@@ -83,6 +84,42 @@ app.get('/list/detail/:id', (req: Request, res: Response) => {
       res.send(results);
     })
   } catch (error) {
-    console.error(error);
+    console.log(error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+app.get('/edit/:id', (req: Request, res: Response) => {
+  console.log(req.params.id);
+  try {
+    connection.query('SELECT * FROM posts WHERE id = ?', [req.params.id], (error, results, _fields) => {
+      if (error) {
+        console.error('Error executing query: ' + error.stack);
+        res.status(500).send('Internal Server Error');
+        return;
+      }
+      console.log('세부 글 데이터 : ', results);
+      res.send(results);
+    })
+  } catch (error) {
+    console.log(error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+app.put('/edit/:id', (req: Request, res: Response) => {
+  try {
+    connection.query('UPDATE posts SET title = ?, content = ? WHERE id = ?', [req.body.title, req.body.content, req.params.id], (error, results, _fields) => {
+      if (error) {
+        console.error('Error executing query: ' + error.stack);
+        res.status(500).send('Internal Server Error');
+        return;
+      }
+      console.log('수정한 글 데이터 : ', results);
+      res.send(results);
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).send('Internal Server Error');
   }
 });
