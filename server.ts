@@ -62,7 +62,24 @@ app.get('/list', (_req: Request, res: Response) => {
         res.status(500).send('Internal Server Error');
         return;
       }
-      console.log('결과 : ', results);
+      console.log('전체 글 데이터 : ', results);
+      res.send(results);
+    })
+  } catch (error) {
+    console.error(error);
+  }
+});
+
+app.get('/list/detail/:id', (req: Request, res: Response) => {
+  console.log(req.params.id);
+  try {
+    connection.query("SELECT * FROM posts WHERE id = ?", [req.params.id], (error, results, _fields) => {
+      if (error) {
+        console.error('Error executing query: ' + error.stack);
+        res.status(500).send('Internal Server Error');
+        return;
+      }
+      console.log('세부 글 데이터 : ', results);
       res.send(results);
     })
   } catch (error) {
