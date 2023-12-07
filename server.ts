@@ -54,9 +54,24 @@ app.post('/posts', (req: Request, res: Response) => {
   }
 });
 
-app.get('/list', (_req: Request, res: Response) => {
+app.get('/list', (req: Request, res: Response) => {
   try {
-    connection.query('SELECT * FROM posts', (error, results, _fields) => {
+    let page: number;
+    if (typeof req.query.page === 'string') {
+      page = parseInt(req.query.page, 10);
+    } else {
+      page = 0;
+    }
+    let limit: number;
+    if (typeof req.query.limit === 'string') {
+      limit = parseInt(req.query.limit, 10);
+    } else {
+      limit = 5;
+    }
+    let offset: number = page * limit;
+    console.log(limit);
+    console.log(offset);
+    connection.query('SELECT * FROM posts LIMIT ? OFFSET ?', [limit, offset], (error, results, _fields) => {
       if (error) {
         console.error('Error executing query: ' + error.stack);
         res.status(500).send('Internal Server Error');
@@ -64,7 +79,24 @@ app.get('/list', (_req: Request, res: Response) => {
       }
       console.log('전체 글 데이터 : ', results);
       res.send(results);
-    })
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+app.get('/list/count', (_req: Request, res: Response) => {
+  try {
+    connection.query('SELECT COUNT(*) as totalPostsCount FROM posts', (error, results: [{ totalPostsCount : number }], _fields) => {
+      if (error) {
+        console.error('Error executing query: ' + error.stack);
+        res.status(500).send('Internal Server Error');
+        return;
+      }
+      console.log('전체 글 갯수 : ', results[0].totalPostsCount);
+      res.send(results[0].totalPostsCount.toString());
+    });
   } catch (error) {
     console.log(error);
     res.status(500).send('Internal Server Error');
