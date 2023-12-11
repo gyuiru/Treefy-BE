@@ -2,7 +2,7 @@ import express, { Request, Response } from 'express';
 import path from 'path';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import mysql from 'mysql2';
+import mysql from 'mysql2/';
 
 const app = express();
 app.use(express.json());
@@ -29,6 +29,7 @@ connection.connect((err) => {
     console.log('connected server');
   });
 });
+
 
 app.get('/', (_req: Request, res: Response) => {
   res.sendFile(path.join(__dirname, '../../treefy-fe/dist/index.html'));
@@ -165,6 +166,24 @@ app.delete('/delete/:id', (req: Request, res: Response) => {
         return;
       }
       console.log('삭제한 글 데이터 : ', results);
+      res.send(results);
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+app.post('/signup', (req: Request, res: Response) => {
+  try {
+    const userInsertQuery = 'INSERT INTO user (username, password, nickname) VALUES (?, ?, ?)';
+    connection.query(userInsertQuery, [req.body.username, req.body.password, req.body.nickname], (error, results, _fields) => {
+      if (error) {
+        console.error('Error executing query: ' + error.stack);
+        res.status(500).send('Internal Server Error');
+        return;
+      }
+      console.log('회원가입 결과 데이터 : ', results);
       res.send(results);
     });
   } catch (error) {
