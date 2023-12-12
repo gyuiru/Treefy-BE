@@ -21,8 +21,9 @@ interface TotalPostsCount extends RowDataPacket {
 }
 
 interface UserInfo extends RowDataPacket {
+  id: number;
   username: string;
-  password: string;
+  password?: string;
   nickname: string;
 }
 
@@ -53,7 +54,8 @@ app.use(passport.initialize());
 app.use(session({
   secret: '암호화에 쓸 비번',
   resave : false, // 유저가 서버로 요청할 때마다 세션 갱신할건지 (false가 일반적)
-  saveUninitialized : false // 로그인 안해도 세션 만들것인지 (false가 일반적)
+  saveUninitialized : false, // 로그인 안해도 세션 만들것인지 (false가 일반적)
+  cookie : { maxAge : 60 * 60 * 1000 } // ms단위 (1시간)
 }))
 
 app.use(passport.session());
@@ -75,6 +77,31 @@ passport.use(new LocalStrategy(async (username: string, password: string, done) 
     done(new Error('Internal Server Error'));
   }
 }));
+
+passport.serializeUser((user: any, done) => {
+  // 로그인 성공하면 세션 document 만들기 & 쿠키를 유저에게 보내주기 (자동)
+  console.log('user 정보에요', user);
+  process.nextTick(() => { // 내부 코드를 비동기적으로 처리
+    done(null, user.id);
+  })
+});
+
+passport.deserializeUser(async (id: number, done) => {
+  // 유저가 쿠키 제출시 확인해보기 (res.user 사용가능)
+  try {
+    const connection = await pool.getConnection();
+    let [results] = await connection.query<UserInfo[]>('SELECT * FROM treefy.`user` WHERE id = ?', [id])
+    if (results.length) {
+      delete results[0].password;
+      done(null, results[0]);
+    } else {
+      done(new Error('No user'));
+    }
+  } catch (error) {
+    console.log(error);
+    done(new Error('Internal Server Error'));
+  }
+});
 
 app.get('/', (_req: Request, res: Response) => {
   res.sendFile(path.join(__dirname, '../../treefy-fe/dist/index.html'));
