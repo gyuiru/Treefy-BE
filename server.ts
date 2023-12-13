@@ -250,3 +250,13 @@ app.post('/login', async (req: Request, res: Response, next) => {
     }
   })(req, res, next);
 });
+
+app.get ('/mypage', async (req: Request, res: Response) => {
+  console.log(req.user);
+  try {
+    res.send(req.user);
+  } catch (error) {
+    console.log(error);
+    res.status(500).send('Internal Server Error');
+  }
+});
