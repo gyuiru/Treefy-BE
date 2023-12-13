@@ -7,6 +7,7 @@ import { RowDataPacket } from 'mysql2/promise';
 import session from 'express-session';
 import passport from 'passport';
 import { Strategy as LocalStrategy } from 'passport-local';
+import bcrypt from 'bcrypt';
 
 const app = express();
 app.use(express.json());
@@ -220,9 +221,10 @@ app.delete('/delete/:id', async (req: Request, res: Response) => {
 
 app.post('/signup', async (req: Request, res: Response) => {
   try {
+    const hash = await bcrypt.hash(req.body.password, 10);
     const connection = await pool.getConnection();
     const userInsertQuery = 'INSERT INTO user (username, password, nickname) VALUES (?, ?, ?)';
-    const [results] = await connection.query(userInsertQuery, [req.body.username, req.body.password, req.body.nickname]);
+    const [results] = await connection.query(userInsertQuery, [req.body.username, hash, req.body.nickname]);
     console.log('회원가입 결과 데이터 : ', results);
     res.send(results);
   } catch (error) {
