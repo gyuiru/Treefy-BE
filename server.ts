@@ -8,6 +8,7 @@ import session from 'express-session';
 import passport from 'passport';
 import { Strategy as LocalStrategy } from 'passport-local';
 import bcrypt from 'bcrypt';
+const MySQLStore = require('express-mysql-session')(session);
 
 const app = express();
 app.use(express.json());
@@ -28,6 +29,13 @@ interface UserInfo extends RowDataPacket {
   nickname: string;
 }
 
+interface MySQLStoreOptions {
+  host: string | undefined;
+  user: string | undefined;
+  password: string | undefined;
+  database: string | undefined;
+}
+
 const pool = mysql.createPool({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
@@ -35,7 +43,25 @@ const pool = mysql.createPool({
   database: process.env.DB_NAME,
 });
 
+const mySQLStoreOptions: MySQLStoreOptions = {
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+};
+
+const sessionStore = new MySQLStore(mySQLStoreOptions);
+
+app.use(session({
+    secret: '암호화에 쓸 비번',
+    store: sessionStore,
+    resave : false, // 유저가 서버로 요청할 때마다 세션 갱신할건지 (false가 일반적)
+    saveUninitialized : false, // 로그인 안해도 세션 만들것인지 (false가 일반적)
+    cookie : { maxAge : 60 * 60 * 1000 } // ms단위 (1시간)
+}));
+
 // 연결 풀을 사용하여 데이터베이스에 연결하려는 시도를 한다
+// mysql2 promise 사용을 위해
 pool.getConnection()
 .then(connection => {
     // 연결 성공 시 로그를 출력하고 연결을 풀에 반환한다
@@ -52,13 +78,6 @@ pool.getConnection()
 });
 
 app.use(passport.initialize());
-app.use(session({
-  secret: '암호화에 쓸 비번',
-  resave : false, // 유저가 서버로 요청할 때마다 세션 갱신할건지 (false가 일반적)
-  saveUninitialized : false, // 로그인 안해도 세션 만들것인지 (false가 일반적)
-  cookie : { maxAge : 60 * 60 * 1000 } // ms단위 (1시간)
-}))
-
 app.use(passport.session());
 
 passport.use(new LocalStrategy(async (username: string, password: string, done) => {
@@ -68,7 +87,7 @@ passport.use(new LocalStrategy(async (username: string, password: string, done) 
     if (!results.length) {
       return done(null, false, { message: '아이디 DB에 없음' })
     }
-    if (results[0].password === password) {
+    if (await bcrypt.compare(password, results[0].password ?? '')) {
       return done(null, results[0]);
     } else {
       return done(null, false, { message: '비번불일치' });
